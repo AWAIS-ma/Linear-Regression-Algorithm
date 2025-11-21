@@ -5,7 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
 # ----- Load Data -----
-data_frame = pd.read_csv(r"D:\Machine Learning Alogrithms\Linear_regression\student_record.csv")
+data_frame = pd.read_csv("D:\Machine Learning Alogrithms\Linear_regression\Linear-Regression-Algorithm\student_record.csv")
 
 
 # Features and target
@@ -47,13 +47,37 @@ r2 = r2_score(y, y_pred_train)
 print(f"Training MSE: {mse:.2f}")
 print(f"Training R2 Score: {r2:.2f}\n")
 
-# ----- Visualization -----
+
+# ----- Visualization with slope line -----
 plt.figure(figsize=(8,5))
+
+# Scatter actual data
 plt.scatter(data_frame["study_hours"], y, color="blue", label="Actual Scores")
+
+# Scatter predicted point
 plt.scatter([study_hours], [predicted_score], color="red", s=100, label="Predicted Score")
+
+# ----- Regression line for study_hours -----
+# Create range of study_hours values
+study_hours_range = np.linspace(data_frame["study_hours"].min(), data_frame["study_hours"].max(), 100)
+
+# Keep other features at their mean
+attendance_mean = data_frame["attendance"].mean()
+previous_score_mean = data_frame["previous_score"].mean()
+
+X_line = pd.DataFrame({
+    "study_hours": study_hours_range,
+    "attendance": [attendance_mean]*100,
+    "previous_score": [previous_score_mean]*100
+})
+
+y_line = model.predict(X_line)
+
+plt.plot(study_hours_range, y_line, color="green", linewidth=2, label="Slope Line")
+
 plt.xlabel("Study Hours")
 plt.ylabel("Current Score")
-plt.title("Study Hours vs Current Score")
+plt.title("Study Hours vs Current Score with Slope")
 plt.legend()
 plt.grid(True)
 plt.show()
