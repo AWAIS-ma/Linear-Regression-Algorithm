@@ -5,7 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
 # ----- Load Data -----
-data_frame = pd.read_csv("D:\Machine Learning Alogrithms\Linear_regression\Linear-Regression-Algorithm\student_record.csv")
+data_frame = pd.read_csv("student_record.csv")
 
 
 # Features and target
