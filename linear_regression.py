@@ -1,83 +1,110 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
-# ----- Load Data -----
-data_frame = pd.read_csv("student_record.csv")
+# ----- Load dataset -----
+df = pd.read_csv("American_Housing_Data.csv")
 
+# ----- Convert to numeric -----
+for col in ["Beds", "Baths", "Living Space",
+            "Zip Code Population", "Zip Code Density",
+            "Median Household Income", "Latitude", "Longitude"]:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# Features and target
-X = data_frame[["study_hours", "attendance", "previous_score"]]
-y = data_frame["current_score"]
+# ----- Drop rows with missing values -----
+df = df.dropna()
 
-# ----- Train Linear Regression Model -----
+# ----- Define X and y (using only 3 features) -----
+X = df[["Living Space", "Baths", "Median Household Income"]]  # Selected features
+y = df["Price"]
+
+# ----- Train-test split -----
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# ----- Train model -----
 model = LinearRegression()
+model.fit(X_train, y_train)
 
-model.fit(X, y)
+# ----- Evaluate -----
+y_train_pred = model.predict(X_train)
+y_test_pred = model.predict(X_test)
+
+print("---- Training Performance ----")
+print("Training R² Score:", r2_score(y_train, y_train_pred))
+print("Training MSE:", mean_squared_error(y_train, y_train_pred))
+
+print("\n---- Testing Performance ----")
+print("Testing R² Score:", r2_score(y_test, y_test_pred))
+print("Testing MSE:", mean_squared_error(y_test, y_test_pred))
 
 # ----- Display model parameters -----
-print("Model coefficients:")
+print("\nModel coefficients:")
 for feature, coef in zip(X.columns, model.coef_):
     print(f"{feature}: {coef:.2f}")
-print(f"Intercept: {model.intercept_:.2f}\n")
+print(f"Intercept: {model.intercept_:.2f}")
 
-# ----- User Prediction -----
-print("Enter new student details to predict current score:")
-study_hours = float(input("Study hours: "))
-attendance = float(input("Attendance %: "))
-previous_score = float(input("Previous score: "))
-
-user_df = pd.DataFrame({
-    "study_hours": [study_hours],
-    "attendance": [attendance],
-    "previous_score": [previous_score]
-})
-
-predicted_score = model.predict(user_df)[0]
-predicted_score = np.clip(predicted_score, 0, 100)
-print(f"\nPredicted current score: {predicted_score:.2f}\n")
-
-# ----- Model Evaluation -----
-y_pred_train = model.predict(X)
-mse = mean_squared_error(y, y_pred_train)
-r2 = r2_score(y, y_pred_train)
-
-print(f"Training MSE: {mse:.2f}")
-print(f"Training R2 Score: {r2:.2f}\n")
-
-
-# ----- Visualization with slope line -----
+# ----- Visualization: Living Space vs Price -----
 plt.figure(figsize=(8,5))
+plt.scatter(df["Living Space"], y, color="blue", label="Actual Prices", alpha=0.6)
 
-# Scatter actual data
-plt.scatter(data_frame["study_hours"], y, color="blue", label="Actual Scores")
-
-# Scatter predicted point
-plt.scatter([study_hours], [predicted_score], color="red", s=100, label="Predicted Score")
-
-# ----- Regression line for study_hours -----
-# Create range of study_hours values
-study_hours_range = np.linspace(data_frame["study_hours"].min(), data_frame["study_hours"].max(), 100)
-
-# Keep other features at their mean
-attendance_mean = data_frame["attendance"].mean()
-previous_score_mean = data_frame["previous_score"].mean()
+# Regression line
+living_range = np.linspace(df["Living Space"].min(), df["Living Space"].max(), 100)
+bath_mean = df["Baths"].mean()
+income_mean = df["Median Household Income"].mean()
 
 X_line = pd.DataFrame({
-    "study_hours": study_hours_range,
-    "attendance": [attendance_mean]*100,
-    "previous_score": [previous_score_mean]*100
+    "Living Space": living_range,
+    "Baths": [bath_mean]*100,
+    "Median Household Income": [income_mean]*100
 })
 
 y_line = model.predict(X_line)
+plt.plot(living_range, y_line, color="red", linewidth=2, label="Regression Line")
 
-plt.plot(study_hours_range, y_line, color="green", linewidth=2, label="Slope Line")
+plt.xlabel("Living Space (sq ft)")
+plt.ylabel("Price")
+plt.title("Living Space vs House Price")
+plt.legend()
+plt.grid(True)
+plt.show()
 
-plt.xlabel("Study Hours")
-plt.ylabel("Current Score")
-plt.title("Study Hours vs Current Score with Slope")
+# ----- Optional Visualization: Baths vs Price -----
+plt.figure(figsize=(8,5))
+plt.scatter(df["Baths"], y, color="green", alpha=0.6)
+bath_range = np.linspace(df["Baths"].min(), df["Baths"].max(), 100)
+X_line_bath = pd.DataFrame({
+    "Living Space": [df["Living Space"].mean()]*100,
+    "Baths": bath_range,
+    "Median Household Income": [income_mean]*100
+})
+y_line_bath = model.predict(X_line_bath)
+plt.plot(bath_range, y_line_bath, color="red", linewidth=2, label="Regression Line")
+plt.xlabel("Baths")
+plt.ylabel("Price")
+plt.title("Baths vs House Price")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# ----- Optional Visualization: Median Household Income vs Price -----
+plt.figure(figsize=(8,5))
+plt.scatter(df["Median Household Income"], y, color="purple", alpha=0.6)
+income_range = np.linspace(df["Median Household Income"].min(), df["Median Household Income"].max(), 100)
+X_line_income = pd.DataFrame({
+    "Living Space": [df["Living Space"].mean()]*100,
+    "Baths": [bath_mean]*100,
+    "Median Household Income": income_range
+})
+y_line_income = model.predict(X_line_income)
+plt.plot(income_range, y_line_income, color="red", linewidth=2, label="Regression Line")
+plt.xlabel("Median Household Income")
+plt.ylabel("Price")
+plt.title("Median Household Income vs House Price")
 plt.legend()
 plt.grid(True)
 plt.show()
